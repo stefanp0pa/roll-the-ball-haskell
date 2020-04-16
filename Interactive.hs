@@ -9,7 +9,7 @@ import qualified System.Process as SP
 
 
 workingOs :: Os
-workingOs = Windows
+workingOs = Linux
 
 data Os = Windows | Linux
     deriving (Show, Eq)
