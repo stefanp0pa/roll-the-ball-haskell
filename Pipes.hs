@@ -9,6 +9,7 @@ module Pipes where
     pentru afisarea celulelor nivelului.
 --}
 
+
 horPipe :: Char
 horPipe = '═'
 

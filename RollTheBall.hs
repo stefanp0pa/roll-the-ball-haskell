@@ -24,18 +24,24 @@ type Position = (Int, Int)
 {-
     Tip de date pentru reprezentarea celulelor tablei de joc
 -}
-data Cell = Cell {cellValue:: Char} deriving (Eq, Show)
+data Cell = Cell Char deriving (Eq, Ord, Show)
 
-dummyCell1 :: Cell
-dummyCell1 = Cell {cellValue = horPipe}
-dummyCell2 :: Cell
-dummyCell2 = Cell {cellValue = startRight}
-squares :: (A.Array Int Int)
-squares = A.array (1,10) [(x, x*x) | x <- [1..10]]
-arr123::(A.Array (Int, Int) Int)
-arr123 = A.array ((0, 0), (1, 1)) 
-              [((0, 0), 1), ((0, 1), 2),
-               ((1, 0), 3), ((1, 1), 4)]
+showCell:: Cell -> IO()
+showCell (Cell c) = putStrLn [c]
+--instance Show Cell
+ --   where show (Cell c) = putStrLn [c]
+
+
+--dummyCell1 :: Cell
+--dummyCell1 = Cell {cellValue = horPipe}
+--dummyCell2 :: Cell
+--dummyCell2 = Cell {cellValue = startRight}
+--squares :: (A.Array Int Int)
+--squares = A.array (1,10) [(x, x*x) | x <- [1..10]]
+--arr123::(A.Array (Int, Int) Int)
+--arr123 = A.array ((0, 0), (1, 1)) 
+  --            [((0, 0), 1), ((0, 1), 2),
+    --           ((1, 0), 3), ((1, 1), 4)]
 
 
 {-
@@ -43,7 +49,7 @@ arr123 = A.array ((0, 0), (1, 1))
 -}
 data Level = Level { rows::Int
                      ,columns::Int
-                     ,cells::(A.Array (Int,Int) Int) 
+                     ,cells::(A.Array (Int,Int) Cell) 
                    } deriving (Eq, Ord)
 
 {-
@@ -62,8 +68,54 @@ data Level = Level { rows::Int
 -}
 
 instance Show Level 
-    where show = undefined
+    where show level = endl : (finishEndl $ replaceMarks (markNewline $ levelIndices level) (cells level))
 
+levelIndices :: Level -> [(Int,Int)]
+levelIndices level = indices $ cells $ level
+
+finishEndl :: [Char] -> [Char]
+finishEndl xs = foldr(\x acc -> x:acc) [endl] xs
+
+--fillWithEndl::[Char]->[Char]
+--fillWithEndl [] = [endl]
+--fillWithEndl  x = intersperse endl x
+
+--getCellList::Level -> [Char]
+--getCellList level = map (\(Cell x)->x) (A.elems $ cells level)
+
+-- foldr (\((a,b),(Cell c)) acc-> a:acc) [] (assocs $ emptySpaceArray (1,1))
+--foldAux:: ((Int,Int),Cell)->[Char]-> [Char]
+--foldAux ((a,b), (Cell c))
+--              | a ==  
+  
+--linesToList :: [((Int,Int), Cell)] -> [Int]
+--linesToList assoc = foldr (\((a,_),(Cell _)) acc-> a:acc) [] assoc
+
+markNewline :: [(Int,Int)] -> [(Int,Int)]
+markNewline list = foldr (\x acc -> markNewlineAux x acc) [] list
+
+markNewlineAux :: (Int,Int) -> [(Int,Int)] -> [(Int,Int)]
+markNewlineAux x [] = x:[]
+markNewlineAux (a,b) acc
+        | a == (fst $ head acc) = (a,b):acc
+        | otherwise = (a,b):minus3:acc
+
+replaceMarks:: [(Int,Int)] -> (A.Array (Int,Int) Cell) -> [Char]
+replaceMarks list ar = foldr (\x acc -> (replaceMarkAux x ar):acc) [] list
+
+replaceMarkAux:: (Int,Int) -> (A.Array (Int,Int) Cell) -> Char
+replaceMarkAux x ar
+          | x == minus3 = endl
+          | otherwise = cellValue $ (ar A.! x)
+
+minus3 ::(Int,Int)
+minus3 = (-3,-3) 
+
+cellValue :: Cell -> Char
+cellValue (Cell c) = c
+
+dummy:: [(Int,Int)]
+dummy = [(0,0),(0,1),(-3,-3),(1,0),(1,1)]
 {-
     *** TODO ***
     Primește coordonatele colțului din dreapta jos a hărții.
@@ -72,7 +124,24 @@ instance Show Level
 -}
 
 emptyLevel :: Position -> Level
-emptyLevel = undefined
+emptyLevel dim = Level {rows = row + 1
+                       ,columns = col + 1
+                       ,cells = emptySpaceArray (row,col) }
+         where row = (fst dim)
+               col = (snd dim)
+
+
+emptySpaceArray:: Position -> (A.Array (Int,Int) Cell)
+emptySpaceArray pos = A.array ((0,0),(row, col))
+           (zip (range ((0,0), (row,col))) 
+                (repeat (Cell horPipe )))
+           where row = fst pos
+                 col = snd pos
+
+
+
+elemAt :: (A.Array (Int, Int) Cell) -> (Int, Int) -> Cell
+elemAt arr pos = arr A.! pos
 
 {-
     *** TODO ***
@@ -131,16 +200,17 @@ moveCell = undefined
         connection horPipe botLeft East = False (═╚)
 -}
 connection :: Cell -> Cell -> Directions -> Bool
-connection a b dir
+connection (Cell x) (Cell y) dir
         | x == horPipe = checkHorPipe (y,dir)
         | otherwise = False
-        where x = cellValue a
-              y = cellValue b
+      
 
 
 horPipeList :: [(Char, Directions)]
 horPipeList = [(topLeft, West), (botLeft, West), (botRight, East), (topRight, East),
                (startLeft, East), (startRight, West), (winLeft,East), (winRight,West)]
+
+
 
 checkHorPipe :: (Char,Directions) -> Bool
 checkHorPipe x = x `elem` horPipeList
