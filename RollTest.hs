@@ -262,9 +262,9 @@ checkSuccessors lvl lst = checkSet (succ1, succ2) where
 checkBFS :: Eq s => [([Node s a], [Node s a])] -> Int -> Bool
 checkBFS bfsStream tk = (not (L.null bfsList)) && (nodeChildrenInFrontier bfsList) && (validOrderInFrontier bfsList)
     where sorted xs = and $ zipWith (<=) xs (tail xs) 
-          nodeChildrenInFrontier xs = and $ zipWith (\(_, fr1) (nds, _) -> (L.map nodeState nds) `isInfixOf` (L.map nodeState (nodeChildren (head fr1)))) xs (tail xs)
+          nodeChildrenInFrontier xs = and $ zipWith (\(_, fr1) (nds, _) -> (L.map nodeState nds) `subsetOf` (L.map nodeState (nodeChildren (head fr1)))) xs (tail xs)
           bfsList = take tk bfsStream
-          validOrderInFrontier xs = (and $ L.map (\(x, y) -> ((L.map nodeState x) `isInfixOf` (L.map nodeState y)) && (sorted $ L.map nodeDepth y)) xs)
+          validOrderInFrontier xs = (and $ L.map (\(x, y) -> ((L.map nodeState x) `subsetOf` (L.map nodeState y)) && (sorted $ L.map nodeDepth y)) xs)
 
 checkbidirBFS :: Eq s => (Node s a, Node s a) -> Bool
 checkbidirBFS (nd1, nd2) = ((nodeState nd1) == (nodeState nd2)) && ((nodeState $ fromJust $ nodeParent nd1) /= (nodeState $ fromJust $ nodeParent nd2))
@@ -295,3 +295,4 @@ counterAStar heuristic start =
                              (\level -> modify (+ 1) >> return (isGoal level))
                              (return start)
 
+xs `subsetOf` ys = L.null $ L.filter (not . (`elem` ys)) xs
