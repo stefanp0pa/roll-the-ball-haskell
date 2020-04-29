@@ -5,6 +5,7 @@
 module RollTheBall where
 import Pipes
 import ProblemState
+import Data.Array as A
 
 {-
     Direcțiile în care se poate mișca o piesa pe tablă
@@ -23,13 +24,28 @@ type Position = (Int, Int)
 {-
     Tip de date pentru reprezentarea celulelor tablei de joc
 -}
-data Cell = Cell --TODO
+data Cell = Cell {cellValue:: Char} deriving (Eq, Show)
+
+dummyCell1 :: Cell
+dummyCell1 = Cell {cellValue = horPipe}
+dummyCell2 :: Cell
+dummyCell2 = Cell {cellValue = startRight}
+squares :: (A.Array Int Int)
+squares = A.array (1,10) [(x, x*x) | x <- [1..10]]
+arr123::(A.Array (Int, Int) Int)
+arr123 = A.array ((0, 0), (1, 1)) 
+              [((0, 0), 1), ((0, 1), 2),
+               ((1, 0), 3), ((1, 1), 4)]
+
 
 {-
     Tip de date pentru reprezentarea nivelului curent
 -}
-data Level = Level --TODO
-    deriving (Eq, Ord)
+data Level = Level { rows::Int
+                     ,columns::Int
+                     ,cells::(A.Array (Int,Int) Int) 
+                   } deriving (Eq, Ord)
+
 {-
     *** Optional *** 
   
@@ -115,7 +131,19 @@ moveCell = undefined
         connection horPipe botLeft East = False (═╚)
 -}
 connection :: Cell -> Cell -> Directions -> Bool
-connection = undefined
+connection a b dir
+        | x == horPipe = checkHorPipe (y,dir)
+        | otherwise = False
+        where x = cellValue a
+              y = cellValue b
+
+
+horPipeList :: [(Char, Directions)]
+horPipeList = [(topLeft, West), (botLeft, West), (botRight, East), (topRight, East),
+               (startLeft, East), (startRight, West), (winLeft,East), (winRight,West)]
+
+checkHorPipe :: (Char,Directions) -> Bool
+checkHorPipe x = x `elem` horPipeList
 
 {-
     *** TODO ***
