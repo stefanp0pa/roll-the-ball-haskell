@@ -15,6 +15,11 @@ arr = A.array ((0, 0), (1, 1))
               [((0, 0), 1), ((0, 1), 2),
                ((1, 0), 3), ((1, 1), 4)]
 
+
+boolArr :: (A.Array (Int,Int) Bool)
+boolArr = A.array ((0,0), (0,1))
+                   [((0,0), True), ((0,1), False)]
+
 {--
 Doi operatori utili sunt // și !. Funcționalitatea lor este expusă în
 exemplele de mai jos.
@@ -22,6 +27,17 @@ exemplele de mai jos.
 
 updateArr :: (A.Array (Int, Int) Int) -> (A.Array (Int, Int) Int)
 updateArr arr = arr A.// [((1,i), 5) | i <- [0, 1]]
+
+-- Array i e  -> i cum arata indexul, daca ai vector e un Int, daca ai matrice ai (Int,Int)
+---			  -> e cum arata elementul
+
+
+squares :: (A.Array Int Int)
+squares = A.array (1,10) [(x, x*x) | x <- [1..10]]
+
+squaresPair :: (A.Array Int (Int,Int))
+squaresPair = A.array (1,10) [(x,(x,x*x))| x <- [1..10]]
+
 {-- Aplicat pe array-ul definit anterior vom obtine matricea:
 1 2
 5 5

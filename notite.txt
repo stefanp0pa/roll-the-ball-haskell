@@ -1,0 +1,6 @@
+- celula de Start si celula de Win fixate
+- celulele care se muta pot sau nu sa aiba culoar
+
+- actiune - (pozitie, directie)
+- e.g. ((3,0), East) , ((2,1), South)
+- in realizarea parcurgerii, este necesara retinerea starilor
