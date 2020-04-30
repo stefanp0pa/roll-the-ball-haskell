@@ -234,19 +234,137 @@ changeCell (pos, cell) level = Level {
 -}
 connection :: Cell -> Cell -> Directions -> Bool
 connection (Cell x) (Cell y) dir
+        | x == emptySpace = False
+        | x == emptyCell = False
+        | y == emptySpace = False
+        | y == emptyCell = False	
         | x == horPipe = checkHorPipe (y,dir)
+        | x == verPipe = checkVerPipe (y,dir)
+        | x == topLeft = checkTopLeft (y,dir)
+        | x == botLeft = checkBotLeft (y,dir)
+        | x == botRight = checkBotRight (y,dir)
+        | x == topRight = checkTopRight (y,dir)
+        | x == startUp = checkStartUp (y,dir)
+        | x == startDown = checkStartDown (y,dir)
+        | x == startLeft = checkStartLeft (y,dir)
+        | x == startRight = checkStartRight (y,dir)
         | otherwise = False
       
 
+-- XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
 horPipeList :: [(Char, Directions)]
-horPipeList = [(topLeft, West), (botLeft, West), (botRight, East), (topRight, East),
-               (startLeft, East), (startRight, West), (winLeft,East), (winRight,West)]
+horPipeList = [(topLeft, West), (botLeft, West), (botRight, East), (topRight, East), (horPipe,East),
+               (startLeft, East), (startRight, West), (winLeft,East), (winRight,West), (horPipe, West)]
+
+verPipeList :: [(Char, Directions)]
+verPipeList = [(topLeft, North), (botLeft, South), (botRight, South), (topRight,North), (verPipe, North),
+                (startUp, South), (startDown, North), (winUp, South), (winDown,North), (verPipe, South)]
+
+-- XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+
+topLeftList :: [(Char, Directions)]
+topLeftList = [(horPipe, East), (verPipe, South), (botLeft, South), (botRight, South), (botRight, East),
+               (topRight, East), (startUp, South), (startLeft, East), (winUp, South), (winLeft, East)]
+
+botLeftList :: [(Char, Directions)]
+botLeftList = [(horPipe, East), (verPipe, North), (topLeft, North), (botRight, East), (topRight, North),
+               (topRight, East), (startDown, North), (startLeft, East), (winDown, North), (winLeft, East)]
+
+-- XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+
+botRightList :: [(Char, Directions)]
+botRightList = [(horPipe, West), (verPipe, North), (topLeft, West), (topLeft, North), (botLeft, West),
+                (topRight, North), (startDown, North), (startRight, West), (winDown, North), (winRight, West)]
+
+topRightList :: [(Char, Directions)]
+topRightList = [(horPipe, West), (verPipe, South), (topLeft, West), (botLeft, West), (botLeft, South),
+                (botRight, South), (startUp, South), (startRight, West), (winUp, South), (winRight, West)]
 
 
+-- XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+
+startUpList :: [(Char, Directions)]
+startUpList = [(verPipe, North), (topLeft, North), (topRight, North), (startDown, North), (winDown, North)]
+
+startDownList :: [(Char, Directions)]
+startDownList = [(verPipe, South), (botLeft, South), (botRight, South), (startUp, South), (winUp, South)]
+
+startLeftList :: [(Char, Directions)]
+startLeftList = [(horPipe, West), (topLeft, West), (botLeft, West), (startRight, West), (winRight, West)]
+
+startRightList :: [(Char, Directions)]
+startRightList = [(horPipe, East), (botRight, East), (topRight, East), (startLeft, East), (winLeft, East)]
+
+-- XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+
+
+winUpList :: [(Char, Directions)]
+winUpList = [(verPipe, North), (topLeft, North), (topRight, North), (startDown, North), (winDown, North)]
+
+winDownList :: [(Char, Directions)]
+winDownList = [(verPipe, South), (botLeft, South), (botRight, South), (startUp, South), (winUp, South)]
+
+winLeftList :: [(Char, Directions)]
+winLeftList = [(horPipe, West), (topLeft, West), (botLeft, West), (startRight, West), (winRight, West)]
+
+winRightList :: [(Char, Directions)]
+winRightList = [(horPipe, East), (botRight, East), (topRight, East), (startLeft, East), (winLeft, East)]
+
+-- XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
 checkHorPipe :: (Char,Directions) -> Bool
 checkHorPipe x = x `elem` horPipeList
+
+checkVerPipe :: (Char,Directions) -> Bool
+checkVerPipe x = x `elem` verPipeList
+
+-- XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+
+checkTopLeft :: (Char,Directions) -> Bool
+checkTopLeft x = x `elem` topLeftList
+
+checkBotLeft :: (Char,Directions) -> Bool
+checkBotLeft x = x `elem` botLeftList
+
+-- XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+
+checkBotRight :: (Char,Directions) -> Bool
+checkBotRight x = x `elem` botRightList
+
+checkTopRight :: (Char,Directions) -> Bool
+checkTopRight x = x `elem` topRightList
+
+-- XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+
+checkStartUp :: (Char,Directions) -> Bool
+checkStartUp x = x `elem` startUpList
+
+checkStartDown :: (Char,Directions) -> Bool
+checkStartDown x = x `elem` startDownList
+
+checkStartLeft :: (Char,Directions) -> Bool
+checkStartLeft x = x `elem` startLeftList
+
+checkStartRight :: (Char,Directions) -> Bool
+checkStartRight x = x `elem` startRightList
+
+-- XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+
+checkWinUp :: (Char,Directions) -> Bool
+checkWinUp x = x `elem` winUpList
+
+checkWinDown :: (Char,Directions) -> Bool
+checkWinDown x = x `elem` winDownList
+
+checkWinLeft :: (Char,Directions) -> Bool
+checkWinLeft x = x `elem` winLeftList
+
+checkWinRight :: (Char,Directions) -> Bool
+checkWinRight x = x `elem` winRightList
+
+
+
 
 {-
     *** TODO ***

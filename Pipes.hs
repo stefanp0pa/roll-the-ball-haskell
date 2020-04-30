@@ -9,6 +9,7 @@ module Pipes where
     pentru afisarea celulelor nivelului.
 --}
 
+-- XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
 horPipe :: Char
 horPipe = '═'
@@ -16,11 +17,15 @@ horPipe = '═'
 verPipe :: Char
 verPipe = '║'
 
+-- XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+
 topLeft :: Char
 topLeft = '╔'
 
 botLeft :: Char
 botLeft = '╚'
+
+-- XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
 botRight :: Char
 botRight = '╝'
@@ -28,11 +33,15 @@ botRight = '╝'
 topRight :: Char
 topRight = '╗'
 
+-- XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+
 emptySpace :: Char
 emptySpace =  '░'
 
 emptyCell :: Char
 emptyCell = '▓'
+
+-- XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
 startUp :: Char
 startUp = '┴'
@@ -46,6 +55,9 @@ startLeft = '┤'
 startRight :: Char
 startRight = '├'
 
+
+-- XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+
 winUp :: Char
 winUp = '╨'
 
@@ -57,6 +69,8 @@ winLeft = '╡'
 
 winRight :: Char
 winRight = '╞'
+
+-- XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
 endl :: Char
 endl = '\n'
