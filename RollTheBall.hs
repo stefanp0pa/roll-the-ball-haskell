@@ -28,20 +28,6 @@ data Cell = Cell Char deriving (Eq, Ord, Show)
 
 showCell:: Cell -> IO()
 showCell (Cell c) = putStrLn [c]
---instance Show Cell
- --   where show (Cell c) = putStrLn [c]
-
-
---dummyCell1 :: Cell
---dummyCell1 = Cell {cellValue = horPipe}
---dummyCell2 :: Cell
---dummyCell2 = Cell {cellValue = startRight}
---squares :: (A.Array Int Int)
---squares = A.array (1,10) [(x, x*x) | x <- [1..10]]
---arr123::(A.Array (Int, Int) Int)
---arr123 = A.array ((0, 0), (1, 1)) 
-  --            [((0, 0), 1), ((0, 1), 2),
-    --           ((1, 0), 3), ((1, 1), 4)]
 
 
 {-
@@ -80,20 +66,6 @@ finishEndl xs = foldr(\x acc -> x:acc) [endl] xs
 formatMatrix:: Level -> [Char]
 formatMatrix level = replaceMarks (markNewline $ levelIndices level) (cells level)
 
---fillWithEndl::[Char]->[Char]
---fillWithEndl [] = [endl]
---fillWithEndl  x = intersperse endl x
-
---getCellList::Level -> [Char]
---getCellList level = map (\(Cell x)->x) (A.elems $ cells level)
-
--- foldr (\((a,b),(Cell c)) acc-> a:acc) [] (assocs $ emptySpaceArray (1,1))
---foldAux:: ((Int,Int),Cell)->[Char]-> [Char]
---foldAux ((a,b), (Cell c))
---              | a ==  
-  
---linesToList :: [((Int,Int), Cell)] -> [Int]
---linesToList assoc = foldr (\((a,_),(Cell _)) acc-> a:acc) [] assoc
 
 markNewline :: [(Int,Int)] -> [(Int,Int)]
 markNewline list = foldr (\x acc -> markNewlineAux x acc) [] list
@@ -118,8 +90,6 @@ minus3 = (-3,-3)
 cellValue :: Cell -> Char
 cellValue (Cell c) = c
 
-dummy:: [(Int,Int)]
-dummy = [(0,0),(0,1),(-3,-3),(1,0),(1,1)]
 {-
     *** TODO ***
     Primește coordonatele colțului din dreapta jos a hărții.
@@ -138,7 +108,7 @@ emptyLevel dim = Level {rows = row + 1
 emptySpaceArray:: Position -> (A.Array (Int,Int) Cell)
 emptySpaceArray pos = A.array ((0,0),(row, col))
            (zip (range ((0,0), (row,col))) 
-                (repeat (Cell emptySpace )))
+                (repeat (Cell emptySpace)))
            where row = fst pos
                  col = snd pos
 
@@ -161,14 +131,34 @@ elemAt arr pos = arr A.! pos
     celula, dacă aceasta este liberă (emptySpace).
 -}
 
+--functia adauga o noua celula daca pozitia este una valida
+--si daca pe pozitia respectiva este un emptySpace
 addCell :: (Char, Position) -> Level -> Level
-addCell (newChar, pos) level = Level {rows = rows level
+addCell (newChar, pos) level 
+                        | (fitsBounds pos level) == False = level
+                        | otherwise = Level {rows = rows level
                                       ,columns = columns level
                                       ,cells = updateCellArr (newChar,pos) level} 
 
-updateCellArr::(Char,Position) -> Level -> (A.Array (Int,Int) Cell)
-updateCellArr (newChar, pos) level = (cells level) A.// [(pos, (Cell newChar))]
+--functia primeste o pozitie si spune daca e o pozitie valida pe tabla
+fitsBounds:: Position -> Level -> Bool
+fitsBounds (row,col) level
+                   | row < 0 = False
+                   | col < 0 = False
+                   | row > r = False
+                   | col > c = False
+                   | otherwise = True
+                   where r = fst (snd (A.bounds (cells level)))
+                         c = snd (snd (A.bounds (cells level)))
 
+
+updateCellArr::(Char,Position) -> Level -> (A.Array (Int,Int) Cell)
+updateCellArr (newChar, pos) level 
+               | cellValueLevel pos level /= emptySpace = cells level
+               | otherwise =  (cells level) A.// [(pos, (Cell newChar))]
+
+cellValueLevel :: Position -> Level -> Char
+cellValueLevel pos level = cellValue $ (cells level) A.! pos
 
 {-
     *** TODO *** 
@@ -181,10 +171,12 @@ updateCellArr (newChar, pos) level = (cells level) A.// [(pos, (Cell newChar))]
     la stanga.
 -}
  
+
 createLevel :: Position -> [(Char, Position)] -> Level
-createLevel = undefined
+createLevel pos list= foldr foldrLevel (emptyLevel pos) list
 
-
+foldrLevel :: (Char,Position) -> Level -> Level
+foldrLevel (newChar, pos) level = addCell (newChar, pos) level
 {-
     *** TODO ***
 
@@ -196,8 +188,40 @@ createLevel = undefined
 -}
 
 moveCell :: Position -> Directions -> Level -> Level
-moveCell = undefined
+moveCell oldPos dir level
+                  | fitsBounds oldPos level == False = level
+                  | fitsBounds nextPos level == False = level
+                  | cellValue (elemAt (cells level) oldPos) == startRight = level
+                  | cellValue (elemAt (cells level) oldPos) == startLeft = level
+                  | cellValue (elemAt (cells level) oldPos) == startDown = level
+                  | cellValue (elemAt (cells level) oldPos) == startUp = level
+                  | cellValue (elemAt (cells level) oldPos) == winUp = level
+                  | cellValue (elemAt (cells level) oldPos) == winDown = level
+                  | cellValue (elemAt (cells level) oldPos) == winRight = level
+                  | cellValue (elemAt (cells level) oldPos) == winLeft = level
+                  | cellValue (elemAt (cells level) nextPos) /= emptySpace = level
+                  | otherwise = changeCell (oldPos, (Cell emptySpace)) (changeCell (nextPos, cell) level)
+                  where nextPos = nextPosition oldPos dir
+                        cell = (cells level) A.! oldPos
 
+
+nextPosition:: Position -> Directions -> Position
+nextPosition (a,b) dir
+               | dir == West = (a,b-1)
+               | dir == East = (a,b+1)
+               | dir == North = (a-1,b)
+               | dir == South = (a+1,b)
+               | otherwise = (a,b)
+
+
+changeCell::(Position, Cell) -> Level -> Level
+changeCell (pos, cell) level = Level {
+                                         rows = r,
+                                         columns = c,
+                                         cells = (cells level) A.// [(pos,cell)]
+                                       }
+                           where r = rows level
+                                 c = columns level
 {-
     *** HELPER ***
 
