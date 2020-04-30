@@ -366,6 +366,72 @@ checkWinRight x = x `elem` winRightList
 
 
 
+type Offset = (Int,Int)
+directionsOff::[(Directions, Offset)]
+directionsOff = [(North,(-1,0)),(South,(1,0)),(West,(0,-1)),(East,(0,1))]
+
+isStartCell:: Cell -> Bool
+isStartCell (Cell c)
+                 | c == startUp = True
+                 | c == startDown = True
+                 | c == startLeft = True
+                 | c == startRight = True
+                 | otherwise = False
+
+isWinCell :: Cell -> Bool
+isWinCell (Cell c)
+               | c == winUp = True
+               | c == winDown = True
+               | c == winLeft = True
+               | c == winRight = True
+               | otherwise = False
+
+
+findStartCell :: Level -> Position
+findStartCell level = startFromList (assocs (cells level))
+
+startFromList :: [(Position, Cell)] -> Position
+startFromList [] = (0,0)
+startFromList (((a,b),c):xs)
+             | isStartCell c = (a,b)
+             | otherwise = startFromList xs
+
+allNextOptions :: Position -> [(Directions, Offset)] -> [(Directions, Position)]
+allNextOptions (r,c) dir = map (\(d,(rOff,cOff)) -> (d,(r+rOff,c+cOff))) dir
+
+--gaseste optiunile initiale de next filtrand celulele care nu sunt in tablou
+filterNextOptions :: Level -> [(Directions, Position)] -> [(Directions, Position)]
+filterNextOptions level allOptions = filter (\(_,p) -> (fitsBounds p level)) allOptions
+
+
+isValidNeighbour :: Position -> (Directions, Position) -> Level -> Bool
+isValidNeighbour (oldr,oldc) (dir,(newr,newc)) level = connection oldCell newCell dir
+                                           where oldCell = at level (oldr,oldc)
+                                                 newCell = at level (newr,newc)
+
+
+filterNeighbours:: Level -> Position -> [(Directions,Position)] -> [(Directions,Position)]
+filterNeighbours level start options = filter (\x-> isValidNeighbour start x level) options
+
+
+at::Level -> Position -> Cell
+at level pos = (cells level) A.! pos
+
+cellByPosition:: Position -> Level ->Cell
+cellByPosition pos level = (cells level) A.! pos
+
+
+walkLevel::Position->Level->Bool
+walkLevel start level
+           | isWinCell (cellByPosition start level) = True
+           | neighList == [] = False
+           | otherwise = walkLevel (snd (head neighList)) (changeCell (start,(Cell emptySpace)) level)
+	where neighList = filterNeighbours level start (filterNextOptions level (allNextOptions start directionsOff))
+
+-- walk nextPos level
+--etAssocs :: Level -> [(Position,Cell)]
+--getAssocs level = assocs (cells level)
+
 {-
     *** TODO ***
 
@@ -375,7 +441,8 @@ checkWinRight x = x `elem` winRightList
     Este folosită în cadrul Interactive.
 -}
 wonLevel :: Level -> Bool
-wonLevel = undefined
+wonLevel level= walkLevel start level
+	where start = findStartCell level
 
 instance ProblemState Level (Position, Directions) where
     successors = undefined
