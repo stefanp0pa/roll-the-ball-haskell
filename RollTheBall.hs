@@ -67,14 +67,18 @@ data Level = Level { rows::Int
     Atenție! Fiecare linie este urmată de \n (endl in Pipes).
 -}
 
+--se pune un endl la final si la inceputul tabloului
 instance Show Level 
-    where show level = endl : (finishEndl $ replaceMarks (markNewline $ levelIndices level) (cells level))
+    where show level = endl : (finishEndl $ formatMatrix level)
 
 levelIndices :: Level -> [(Int,Int)]
 levelIndices level = indices $ cells $ level
 
 finishEndl :: [Char] -> [Char]
 finishEndl xs = foldr(\x acc -> x:acc) [endl] xs
+
+formatMatrix:: Level -> [Char]
+formatMatrix level = replaceMarks (markNewline $ levelIndices level) (cells level)
 
 --fillWithEndl::[Char]->[Char]
 --fillWithEndl [] = [endl]
@@ -134,7 +138,7 @@ emptyLevel dim = Level {rows = row + 1
 emptySpaceArray:: Position -> (A.Array (Int,Int) Cell)
 emptySpaceArray pos = A.array ((0,0),(row, col))
            (zip (range ((0,0), (row,col))) 
-                (repeat (Cell horPipe )))
+                (repeat (Cell emptySpace )))
            where row = fst pos
                  col = snd pos
 
@@ -158,7 +162,12 @@ elemAt arr pos = arr A.! pos
 -}
 
 addCell :: (Char, Position) -> Level -> Level
-addCell = undefined
+addCell (newChar, pos) level = Level {rows = rows level
+                                      ,columns = columns level
+                                      ,cells = updateCellArr (newChar,pos) level} 
+
+updateCellArr::(Char,Position) -> Level -> (A.Array (Int,Int) Cell)
+updateCellArr (newChar, pos) level = (cells level) A.// [(pos, (Cell newChar))]
 
 
 {-
