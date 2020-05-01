@@ -488,7 +488,7 @@ wonLevel level= walkLevel start level
 
 
 isValidEmptySpace :: OffsetTuple -> Level -> Bool
-isValidEmptySpace (pos,dir) level
+isValidEmptySpace (pos,_) level
                       | c == emptySpace = True
                       | otherwise = False
                      where c = cellValue $ cellAt level pos
@@ -564,6 +564,22 @@ addSuccesor:: Action -> Level -> [(Action, Level)] -> [(Action, Level)]
 addSuccesor action level acc = (action, executeAction action level) : acc
 
 
+-- reverseAction :: (a, s) -> (a, s)
+oppositeDirection:: Directions -> Directions
+oppositeDirection dir 
+             | dir == East = West
+             | dir == West = East
+             | dir == South = North
+             | otherwise = South
+
+
+oppositeAction:: Action -> Action
+oppositeAction (pos, dir) = ((nextPosition pos dir),opp)
+               where opp = oppositeDirection dir
+
+oppositeState:: Level -> Action -> Level
+oppositeState level action = executeAction op_action level
+              where op_action = oppositeAction action 
 
 
 instance ProblemState Level (Position, Directions) where
@@ -572,4 +588,4 @@ instance ProblemState Level (Position, Directions) where
 
     isGoal level = wonLevel level
     
-    reverseAction (((a,b),dir),level)= undefined
+    reverseAction (action,level)= (oppositeAction action, oppositeState level action)
