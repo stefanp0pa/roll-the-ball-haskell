@@ -175,8 +175,11 @@ cellValueLevel pos level = cellValue $ (cells level) A.! pos
 createLevel :: Position -> [(Char, Position)] -> Level
 createLevel pos list= foldr foldrLevel (emptyLevel pos) list
 
+--functie auxiliara 
 foldrLevel :: (Char,Position) -> Level -> Level
 foldrLevel (newChar, pos) level = addCell (newChar, pos) level
+
+
 {-
     *** TODO ***
 
@@ -205,6 +208,7 @@ moveCell oldPos dir level
                         cell = (cells level) A.! oldPos
 
 
+--pornind de la o pozitie, se obtine pozitia urmatoare pe o directie data
 nextPosition:: Position -> Directions -> Position
 nextPosition (a,b) dir
                | dir == West = (a,b-1)
@@ -214,6 +218,7 @@ nextPosition (a,b) dir
                | otherwise = (a,b)
 
 
+--modifica o celula de pe o configuratie
 changeCell::(Position, Cell) -> Level -> Level
 changeCell (pos, cell) level = Level {
                                          rows = r,
@@ -365,72 +370,88 @@ checkWinRight x = x `elem` winRightList
 
 
 
+--alias pentru un tuplu de offseturi pentru o pozitie 2D
+type Offset2D = (Int,Int)
 
-type Offset = (Int,Int)
-directionsOff::[(Directions, Offset)]
+--vector de offseturi, cum se modifica indicii de pozitie relativ mergand pe o directie
+directionsOff::[(Directions, Offset2D)]
 directionsOff = [(North,(-1,0)),(South,(1,0)),(West,(0,-1)),(East,(0,1))]
 
+
+--functie care spune daca celula data este de tip start
 isStartCell:: Cell -> Bool
-isStartCell (Cell c)
-                 | c == startUp = True
-                 | c == startDown = True
-                 | c == startLeft = True
-                 | c == startRight = True
-                 | otherwise = False
+isStartCell (Cell c) = c `elem` startCells
 
+
+--functie care spune daca celula data este de tip finish
 isWinCell :: Cell -> Bool
-isWinCell (Cell c)
-               | c == winUp = True
-               | c == winDown = True
-               | c == winLeft = True
-               | c == winRight = True
-               | otherwise = False
+isWinCell (Cell c) = c `elem` winningCells
 
 
+--parcurge o configuratie si determina care e pozitia celulei de start
 findStartCell :: Level -> Position
 findStartCell level = startFromList (assocs (cells level))
 
+--functie auxiliara folosita in determinarea pozitiei celulei de start
 startFromList :: [(Position, Cell)] -> Position
 startFromList [] = (0,0)
 startFromList (((a,b),c):xs)
              | isStartCell c = (a,b)
              | otherwise = startFromList xs
 
-allNextOptions :: Position -> [(Directions, Offset)] -> [(Directions, Position)]
-allNextOptions (r,c) dir = map (\(d,(rOff,cOff)) -> (d,(r+rOff,c+cOff))) dir
 
---gaseste optiunile initiale de next filtrand celulele care nu sunt in tablou
-filterNextOptions :: Level -> [(Directions, Position)] -> [(Directions, Position)]
-filterNextOptions level allOptions = filter (\(_,p) -> (fitsBounds p level)) allOptions
-
-
-isValidNeighbour :: Position -> (Directions, Position) -> Level -> Bool
-isValidNeighbour (oldr,oldc) (dir,(newr,newc)) level = connection oldCell newCell dir
-                                           where oldCell = at level (oldr,oldc)
-                                                 newCell = at level (newr,newc)
+--pornind de la o pozitie initiala, se aplica un vector de directii si se 
+--determina o lista de pozitii succesoare (pozitiile nu sunt neaparat valide pe tabla)
+allNextOptions :: Position -> [(Directions, Offset2D)] -> [(Position, Directions)]
+allNextOptions (r,c) dir = map (\(d,(rOff,cOff)) -> ((r+rOff,c+cOff),d)) dir
 
 
-filterNeighbours:: Level -> Position -> [(Directions,Position)] -> [(Directions,Position)]
+--primeste lista de la allNextOptions si filtreaza pozitiile care se afla pe tabla
+filterNextOptions :: Level -> [(Position, Directions)] -> [(Position, Directions)]
+filterNextOptions level allOptions = filter (\(p,_) -> (fitsBounds p level)) allOptions
+
+
+--pornind de la o pozitie, intoarce o lista cu toate pozitiile succesoare valide
+--conditia de validare este ca pozitia succesoare sa fie una de pe tabla
+--nu tine cont de continutul celulelor succesoare
+validNextOptions:: Position -> Level -> [(Position, Directions)]
+validNextOptions pos level = filterNextOptions level (allNextOptions pos directionsOff)
+
+
+--pornind de la o celula pe o pozitie initiala si o celula pe o  pozitie succesoare,
+--se determina daca exista o conexiune valida intre cele doua celule pe directia data
+isValidNeighbour :: Position -> (Position, Directions) -> Level -> Bool
+isValidNeighbour (oldr,oldc) ((newr,newc), dir) level = connection oldCell newCell dir
+                                           where oldCell = cellAt level (oldr,oldc)
+                                                 newCell = cellAt level (newr,newc)
+
+
+--functie de la o pozitie initiala si o lista de pozitii succesoare si directiile asociate,
+--se obtine prin filtrare o lista de celule succesoare prin care se poate continua conexiunea
+filterNeighbours:: Level -> Position -> [(Position, Directions)] -> [(Position,Directions)]
 filterNeighbours level start options = filter (\x-> isValidNeighbour start x level) options
 
 
-at::Level -> Position -> Cell
-at level pos = (cells level) A.! pos
-
-cellByPosition:: Position -> Level ->Cell
-cellByPosition pos level = (cells level) A.! pos
+--intoarce celula corespondenta unei pozitii de pe tabla
+cellAt::Level -> Position -> Cell
+cellAt level pos = (cells level) A.! pos
 
 
+
+--functia auxiliara care parcurge drumul construit intr-o configuratie
+--si determina daca drumul conecteaza start cu finish
 walkLevel::Position->Level->Bool
 walkLevel start level
-           | isWinCell (cellByPosition start level) = True
+           | isWinCell (cellAt level start) = True
            | neighList == [] = False
-           | otherwise = walkLevel (snd (head neighList)) (changeCell (start,(Cell emptySpace)) level)
-	where neighList = filterNeighbours level start (filterNextOptions level (allNextOptions start directionsOff))
+           | otherwise = walkLevel (fst (head neighList)) (changeCell (start,(Cell emptySpace)) level)
+	where neighList = buildNeighList start level
 
--- walk nextPos level
---etAssocs :: Level -> [(Position,Cell)]
---getAssocs level = assocs (cells level)
+
+--functie care construieste lista de vecini cu care se poate conecta celula de o pozitie data
+buildNeighList:: Position -> Level -> [(Position, Directions)]
+buildNeighList start level = filterNeighbours level start (validNextOptions start level)
+
 
 {-
     *** TODO ***
@@ -440,11 +461,27 @@ walkLevel start level
     de tip inițial la cea de tip final.
     Este folosită în cadrul Interactive.
 -}
+
+--functie care determina daca o configuratie este castigatoare
 wonLevel :: Level -> Bool
 wonLevel level= walkLevel start level
 	where start = findStartCell level
 
+
+
+-- returneaza lista cu toate pozitiile din configuratie
+-- altfel spus, lista cu toate perechile de indecsi
+allPositions:: Level -> [Position]
+allPositions level = indices (cells level)
+
+
+
+
+
 instance ProblemState Level (Position, Directions) where
-    successors = undefined
-    isGoal = undefined
-    reverseAction = undefined
+    
+    successors level= undefined
+
+    isGoal level = wonLevel level
+    
+    reverseAction (((a,b),dir),level)= undefined
