@@ -373,6 +373,9 @@ checkWinRight x = x `elem` winRightList
 --alias pentru un tuplu de offseturi pentru o pozitie 2D
 type Offset2D = (Int,Int)
 
+--alias pentru un tuplu care descrie (pozitie destinatie, directia prin care s-a ajuns)
+type OffsetTuple = (Position, Directions)
+
 --vector de offseturi, cum se modifica indicii de pozitie relativ mergand pe o directie
 directionsOff::[(Directions, Offset2D)]
 directionsOff = [(North,(-1,0)),(South,(1,0)),(West,(0,-1)),(East,(0,1))]
@@ -386,6 +389,14 @@ isStartCell (Cell c) = c `elem` startCells
 --functie care spune daca celula data este de tip finish
 isWinCell :: Cell -> Bool
 isWinCell (Cell c) = c `elem` winningCells
+
+--functie care spune daca celula data se poata muta pe tabla
+isMovableCell :: Cell -> Bool
+isMovableCell (Cell c)
+              | c `elem` startCells = False
+           	  | c `elem` winningCells = False
+              | c == emptySpace = False
+              | otherwise = True
 
 
 --parcurge o configuratie si determina care e pozitia celulei de start
@@ -402,25 +413,25 @@ startFromList (((a,b),c):xs)
 
 --pornind de la o pozitie initiala, se aplica un vector de directii si se 
 --determina o lista de pozitii succesoare (pozitiile nu sunt neaparat valide pe tabla)
-allNextOptions :: Position -> [(Directions, Offset2D)] -> [(Position, Directions)]
+allNextOptions :: Position -> [(Directions, Offset2D)] -> [OffsetTuple]
 allNextOptions (r,c) dir = map (\(d,(rOff,cOff)) -> ((r+rOff,c+cOff),d)) dir
 
 
 --primeste lista de la allNextOptions si filtreaza pozitiile care se afla pe tabla
-filterNextOptions :: Level -> [(Position, Directions)] -> [(Position, Directions)]
+filterNextOptions :: Level -> [OffsetTuple] -> [OffsetTuple]
 filterNextOptions level allOptions = filter (\(p,_) -> (fitsBounds p level)) allOptions
 
 
 --pornind de la o pozitie, intoarce o lista cu toate pozitiile succesoare valide
 --conditia de validare este ca pozitia succesoare sa fie una de pe tabla
 --nu tine cont de continutul celulelor succesoare
-validNextOptions:: Position -> Level -> [(Position, Directions)]
+validNextOptions:: Position -> Level -> [OffsetTuple]
 validNextOptions pos level = filterNextOptions level (allNextOptions pos directionsOff)
 
 
 --pornind de la o celula pe o pozitie initiala si o celula pe o  pozitie succesoare,
 --se determina daca exista o conexiune valida intre cele doua celule pe directia data
-isValidNeighbour :: Position -> (Position, Directions) -> Level -> Bool
+isValidNeighbour :: Position -> OffsetTuple -> Level -> Bool
 isValidNeighbour (oldr,oldc) ((newr,newc), dir) level = connection oldCell newCell dir
                                            where oldCell = cellAt level (oldr,oldc)
                                                  newCell = cellAt level (newr,newc)
@@ -428,7 +439,7 @@ isValidNeighbour (oldr,oldc) ((newr,newc), dir) level = connection oldCell newCe
 
 --functie de la o pozitie initiala si o lista de pozitii succesoare si directiile asociate,
 --se obtine prin filtrare o lista de celule succesoare prin care se poate continua conexiunea
-filterNeighbours:: Level -> Position -> [(Position, Directions)] -> [(Position,Directions)]
+filterNeighbours:: Level -> Position -> [OffsetTuple] -> [OffsetTuple]
 filterNeighbours level start options = filter (\x-> isValidNeighbour start x level) options
 
 
@@ -449,8 +460,12 @@ walkLevel start level
 
 
 --functie care construieste lista de vecini cu care se poate conecta celula de o pozitie data
-buildNeighList:: Position -> Level -> [(Position, Directions)]
+buildNeighList:: Position -> Level -> [OffsetTuple]
 buildNeighList start level = filterNeighbours level start (validNextOptions start level)
+
+
+
+
 
 
 {-
@@ -469,18 +484,91 @@ wonLevel level= walkLevel start level
 
 
 
+
+
+
+isValidEmptySpace :: OffsetTuple -> Level -> Bool
+isValidEmptySpace (pos,dir) level
+                      | c == emptySpace = True
+                      | otherwise = False
+                     where c = cellValue $ cellAt level pos
+
+
+filterEmptySpaces :: Level -> [OffsetTuple] -> [OffsetTuple]
+filterEmptySpaces level options = filter (\x -> isValidEmptySpace x level) options
+
+
+
+--alias pentru o actiune -> (pozitie initiala, directie)
+type Action = (Position,Directions)
+
+
 -- returneaza lista cu toate pozitiile din configuratie
 -- altfel spus, lista cu toate perechile de indecsi
 allPositions:: Level -> [Position]
 allPositions level = indices (cells level)
 
 
+-- OffsetTuple = (dest, dir)
+-- Action = (start, dir)
+
+
+--validNextOptions start level -> [OffsetTuple]
+--filterEmptySpaces level [OffsetTuple] -> [OffsetTuple]
+--mapExtractAction start [OffsetTuple] -> [Action]
+
+
+
+--functie care cauta pe o configuratie toate pozitiile de celule mobile
+allMovablePositions:: Level -> [Position]
+allMovablePositions level = filter (\x -> isMovableCell (cellAt level x)) (allPositions level)
+
+
+--functie care cauta toate mutarile posibile pentru o pozitie pe o configuratie
+moveOptions:: Position -> Level -> [Action]
+moveOptions start level
+             | isMovableCell (cellAt level start) == False = []
+             | otherwise = mapExtractAction start 
+                   (filterEmptySpaces level (validNextOptions start level))
+
+
+--functie care cauta toate mutarile posibile pentru o configuratie
+allMoveOptions:: Level -> [Action]
+allMoveOptions level = foldr (\pos acc -> concat [(moveOptions pos level),acc]) [] (allPositions level)  
+
+
+--functie care primeste o actiune si o configuratie si executa actiunea
+executeAction::Action -> Level -> Level
+executeAction (pos,dir) level = moveCell pos dir level
+
+
+--functie care primeste pozitie orginala si (pozitie urmatoare, directie)
+--si returneaza un Action, adica (pozitie originala, directie)
+--functie auxiliara care conecteaza logica din cerinta cu logica pe care am folosit-o
+extractAction::Position -> OffsetTuple ->Action
+extractAction oldPos (newPos,dir) = (oldPos,dir)
+
+
+--converteste o lista de tupluri OffsetTuple intr-o lista de Action
+--se da si pozitia de start ca si argument
+mapExtractAction::Position -> [OffsetTuple] -> [Action]
+mapExtractAction start options = map (\x -> extractAction start x) options
+
+
+
+
+
+--primeste o actiune, o configuratie, un acumulator de succesori
+--adauga noul succesor la acumulator 
+addSuccesor:: Action -> Level -> [(Action, Level)] -> [(Action, Level)]
+addSuccesor action level acc = (action, executeAction action level) : acc
+
 
 
 
 instance ProblemState Level (Position, Directions) where
     
-    successors level= undefined
+    successors level= foldr (\action acc -> addSuccesor action level acc) [] (allMoveOptions level)
 
     isGoal level = wonLevel level
     
