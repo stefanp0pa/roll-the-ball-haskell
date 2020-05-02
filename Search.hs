@@ -17,26 +17,33 @@ import ProblemState
     * copiii, ce vor desemna stările învecinate
 -}
 
-data Node s a = UndefinedNode
+data Node s a = Node { state:: s
+                      ,action:: Maybe a
+                      ,parent:: Maybe (Node s a)
+                      ,depth:: Int
+                      ,children:: [Node s a] 
+                     } deriving (Show)
 
 {-
     *** TODO ***
     Gettere folosite pentru accesul la câmpurile nodului
 -}
 nodeState :: Node s a -> s
-nodeState = undefined
+nodeState n = state n
 
 nodeParent :: Node s a -> Maybe (Node s a)
-nodeParent = undefined
+nodeParent n = parent n
 
 nodeDepth :: Node s a -> Int
-nodeDepth = undefined
+nodeDepth n = depth n
 
 nodeAction :: Node s a -> Maybe a
-nodeAction = undefined
+nodeAction n = action n
 
 nodeChildren :: Node s a -> [Node s a]
-nodeChildren = undefined
+nodeChildren n = children n
+
+
 
 {-
     *** TODO ***
@@ -46,8 +53,28 @@ nodeChildren = undefined
     având drept copii nodurile succesorilor stării curente.
 -}
 
+--fluxTest:: Int -> [Int]
+--fluxTest i = i : [(fluxTest i),(fluxTest i)]
+
 createStateSpace :: (ProblemState s a, Eq s) => s -> Node s a
-createStateSpace = undefined
+createStateSpace initState = root
+                    where root =  Node {state = initState --s
+                                       ,action = Nothing -- Maybe a
+                                       ,parent = Nothing -- Maybe (Node s a)
+                                       ,depth = 0        -- Int
+                                       ,children = childrenNodes root}
+
+
+
+
+
+childrenNodes :: (ProblemState s a, Eq s) => Node s a -> [(Node s a)]
+childrenNodes parentNode = [child | (act,st) <- (successors (state parentNode)),
+              let child = Node {state = st ,action = Just act, parent = Just parentNode ,depth = (depth parentNode) + 1 ,children = childrenNodes child}]
+
+--    successors :: s -> [(a, s)]
+
+
 
 {-
     *** TODO ***
@@ -59,9 +86,14 @@ createStateSpace = undefined
 -}
 
 bfs :: Ord s => Node s a -> [([Node s a], [Node s a])]
-bfs = undefined
+bfs node = bfsAux [node] []
 
-
+-- queue -- visited 
+bfsAux:: Ord s => [Node s a] -> [s] -> [([Node s a], [Node s a])]
+bfsAux (x:xs) visited 
+          | (state x) `elem` visited = []
+          | otherwise = (currChildren, concat [xs,currChildren]) : (bfsAux (concat [xs,currChildren]) ((state x):visited))
+          where currChildren = filter (\n -> (((state n) `elem` visited) == False))  (children x)
 
 {-
     *** TODO ***
@@ -108,3 +140,22 @@ solve :: (ProblemState s a, Ord s)
       -> s          -- Starea finală la care se ajunge
       -> [(Maybe a, s)]   -- Lista perechilor
 solve = undefined
+
+
+
+
+
+
+
+--createChildren :: (ProblemState s a, Eq s) => (Maybe a,s) -> Int -> [Node s a]
+--createChildren (parentAct,parentSt) parDepth = foldr (\(succAct, succSt) -> (createSpaceAux (Just succAct, succSt) (parentAct, parentSt, parDepth))) [] succPairs
+--            where succPairs = successors parentSt
+
+
+--createSpaceAux:: (ProblemState s a, Eq s)=> (Maybe a,s) -> (Maybe a,s,Int) -> Node s a
+--createSpaceAux (act,st) ((Just parAct), parSt, parDepth) = Node {state = st
+ --                                                        ,action = act
+ --                                                        ,parent = defParent
+ --                                                        ,depth = parDepth + 1
+ --                                                        ,children = (createChildren (act, st) parDepth)}
+ --                           where defParent = Just (Node parAct parSt)

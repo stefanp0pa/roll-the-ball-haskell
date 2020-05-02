@@ -546,7 +546,7 @@ executeAction (pos,dir) level = moveCell pos dir level
 --si returneaza un Action, adica (pozitie originala, directie)
 --functie auxiliara care conecteaza logica din cerinta cu logica pe care am folosit-o
 extractAction::Position -> OffsetTuple ->Action
-extractAction oldPos (newPos,dir) = (oldPos,dir)
+extractAction oldPos (_,dir) = (oldPos,dir)
 
 
 --converteste o lista de tupluri OffsetTuple intr-o lista de Action
