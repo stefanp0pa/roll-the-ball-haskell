@@ -18,6 +18,7 @@ import ProblemState
     * copiii, ce vor desemna stările învecinate
 -}
 
+
 data Node s a = Node { state:: s
                       ,action:: Maybe a
                       ,parent:: Maybe (Node s a)
@@ -106,6 +107,7 @@ bfsAux (x:xs) visited
     intersecția dintre cele două frontiere.
 -}
 
+
 -- [([Node s a], [Node s a])]  [([Node s a], [Node s a])] 
 
 
@@ -113,10 +115,6 @@ bfsAux (x:xs) visited
 
 bidirBFS :: Ord s => Node s a -> Node s a -> (Node s a, Node s a)
 bidirBFS start fin= extractIntersection (head (dropWhile (\x -> ((bidirIntersection x) == False)) (zip (bfs start) (bfs fin))))
-
-
---bidirBFSa :: (Ord s) => Node s a -> Node s a -> (([Node s a], [Node s a]),([Node s a], [Node s a]))
---bidirBFSa start fin = head (dropWhile (\x -> ((bidirIntersection x) == False)) (zip (bfs start) (bfs fin)))
 
 bidirIntersection :: (Eq s) => (([Node s a] , [Node s a]) , ([Node s a], [Node s a])) -> Bool
 bidirIntersection ((firstCurr, firstTotal), (secCurr, secTotal))
@@ -169,10 +167,6 @@ reverseNodeList n = iterate reverseNode n
 reverseNode :: Maybe (Node s a) -> Maybe (Node s a)
 reverseNode Nothing = Nothing
 reverseNode (Just a) = nodeParent a
-
---applyReverseAction :: (ProblemState s a) => (Maybe a, s) -> (Maybe a, s)
---applyReverseAction (Nothing, s) = (Nothing, s)
---applyReverseAction (Just a, s) 
 
 
 {-

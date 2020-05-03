@@ -1,0 +1,158 @@
+Nume: Popa Stefan-Andrei
+Grupa: 323CC
+Tema: RollTheBall - Paradigme de Programare
+
+
+
+-> Introducere
+Aceasta este solutia mea din cadrul temei 2 de la Paradigme de Programare, RollTheBall,
+iar in continuare, voi descrie cum am realizat proiectul, precum si deciziile de implementare.
+Timpul de rezolvare a fost in jur de 30-40 de ore, iar acum la final, consider ca am 
+sedimentat mult mai bine cunostintele de Haskell si ca percep mult mai bine paradigma
+functionala de programare.
+
+
+
+
+
+-> Aspect cod si tupuri de date
+In cadrul acestei teme, am avut de implementat noi cateva tipuri de date.
+
+Pentru tipul Level, am ales sa stochez tabla 2D de celule sub forma unui Array
+((Int,Int) Cell), precum si dimensiunile tablei (rows si columns). Folosind un
+Array, am avut acces la mai multe functii din Data.Array care m-au ajutat in 
+materie de modificare, accesare si enumerare de informatii legate de structura tablei.
+
+In RollTheBall.hs, mi-am definit cateva type-uri care sa ma ajute sa confer mai
+multe informatii in privinta functiilor definite de minte si a scopului acestora.
+
+type Position = (Int,Int)
+	-> locatia curenta pe harta (linie,coloana)
+
+type Offset2D = (Int,Int)
+ -> pentru fiecare directie de deplasare in parte, este util sa retin offset-ul
+ pozitiei destinatie fata de pozitia start, iar cu acest tip, mi-am definit
+ practic un vector de directii numit directionsOffset.
+ (ex. daca merg in South, incrementez o linie si pastrez coloana -> (South,(1,0)))
+
+type OffsetTuple = (Position, Directions)
+ -> imi tine minte pozitia destinatie si directia de pe care s-a venit pe aceasta
+
+type Action = (Position, Directions)
+ -> imi tine minte pozitia de start si directia de actiune
+
+
+In Search.hs, tipul de date Node are urmatoarea structura:
+-> state :: s -> configuratia nodului de tipul s
+-> action :: Maybe a -> actiunea prin care s-a ajuns la starea curenta
+-> parent :: Maybe (Node s a) -> parintele nodului curent
+-> depth :: Int -> adancimea curenta de cautara
+-> children :: [Node s a] -> lista de copii ai nodului
+
+Pentru Node, m-am folosit de record-syntax ca sa pot sa instantiez si sa populez 
+informatiile mai usor. M-am orientat dupa semnaturile getter-ilor ca sa imi construiesc
+structura.
+
+
+
+Ca sa pot sa fac functiile mai lizibile, mi-am definit de fiecare data mai multe functii
+auxiliare pe care le-am agregat intr-una principala. In mare, am incercat sa documentez 
+fiecare functie pe care am definit-o ca sa fie clar ce rol are.
+De asemenea, pentru o anumita functionalitate, am incercat sa grupez functiile folosite
+in blocuri bine-definite. In cateva instante, pentru lizibilitate, mi-am definit niste
+delimitatori din comentarii. (ex. --XXXXX)
+
+
+
+
+
+
+
+
+-> Mentiuni implementare
+In acest paragraf, voi descrie cum am gandit rezolvarile pentru diverse puncte din proiect.
+
+
+-> Show Level
+Cand afisam o instanta Level, problema principala era cum sa imi dau seama cum pun endl corect.
+In primul rand, am facut observatia ca endl se pune de fiecare data cand se schimba indicele de 
+linie iterand prin lista cu indecsi de pozitie ai matricei. De fiecare data cand dadeam peste o 
+astfel de schimbare, inseram un marcator de linie (-3,-3), iar dupa, iteram prin lista de indecsi
+rezultata si inlocuiam toate elementele (-3,-3) cu endl. 
+
+Pentru acest punct, am folosit functionala foldr ca sa iterez prin lista.
+
+
+-> Connection
+Ca sa pot sa imi hardcodez usor conexiunile si ca sa pot sa fac dupa verificari mai eficient,
+pentru fiecare tip de celula in parte, mi-am hardcodat o lista de conexiuni. Un element dintr-o
+astfel de lista retine caracterul cu care se invecineaza si directia pe care se conecteaza.
+Ulterior, cand verific o conexiune, pasez un obiect de tip (Char,Directions) si verific daca
+apartine listei de adiacenta.
+
+
+
+
+-> wonLevel
+Ca sa validez o configuratie castigatoare, intai incerc sa gasesc celula de start, iar dupa
+folosindu-ma de listele de adiacenta definite anterior, verific daca nodul curent poate fi 
+continuat de un vecin nevizitat. In caz ca ma opresc la o celula care nu e celula de finish,
+atunci e clar ca nu am de a face cu o configuratie castigatoare.
+
+Functia walkLevel descrie acest proces "de plimbare" pe harta mea.
+
+
+-> Successors
+Pentru acest punct am folosit din plin funtionalele map, filter si foldr ca sa imi caut toate
+posibilitatile de deplasare din fiecare punct de pe harta si ca sa le filtrez, ulterior, pe cele 
+corecte din punct de vedere al conexiunilor. Este un proces pe mai multe nivele de cautare si 
+filtrare.
+
+
+
+-> createStateSpace
+Categoric, poate cea mai dificila functie de implementat din cadrul proiectului. Dificultatea
+principala a constat in popularea in mod recursiv a informatiilor fiecarui nod din arborele de
+stare. Pentru asta, mi-am definit o functie auxiliare createChildren care se foloseste de o 
+constructie let ca sa populeze fiecare nod in mod recursiv. Let si cu list comprehension imi
+permite sa mentin o referinta la nodul parinte atunci cand populez informatiile, lucru ce nu era
+fiabil cu alt tip de constructie, cum ar fi cu foldl impreuna cu where. Utilizand record-syntax,
+pot sa atribui mai elegant informatiile pe fiecare nod in parte.
+
+
+
+-> bfs
+Functia de bfs lucreaza cu recursivitate explicita si se foloseste de o functie auxiliara care
+persista informatiile legate de nodurile vizitate. bfsAux primeste ca argumente lista de noduri
+de pe frontiera curenta, precum si o lista [s] cu starile deja vizitate. 
+
+
+
+-> bidirBFS
+Pentru bidirBFS, ma folosesc de mai multe functii auxiliare care cauta, folosind functionale, pe 
+mai multe nivele nodul de intersectie a celor doua bfs-uri. Dificultatea a constat in faptul ca
+m-am folosit de multe operatii pe liste si pentru acestea, trebuia sa definesc clar ce insemna
+egalitatea intre doua noduri. 
+
+Functionalele utilizate aici sunt dropWhile si map. Head impreuna cu dropWhile imi extrage prima
+intersectie de noduri a celor doua bfs-uri, pe care dupa aplic alte procesari de liste.
+
+
+
+-> extractPath
+Pentru a nu folosi recursivitate explicita, functionala vitala a fost iterate impreuna cu 
+takeWhile. Iterate mergea recursiv pe arbore pana la nodul radacina, iar takeWhile se asigura
+ca procesul de cautare se oprea odata ce nu mai gaseam un parinte pentru nodul curent.
+
+
+
+
+
+
+
+
+-> Concluzii
+Consider ca aceasta tema a solicitat foarte bine cunostintele de Haskell si programare functionala
+si ca a surprins un exemplu bun de rezolvare de problema cu evaluare lenesa. Faptul ca a trebuit
+sa inlocuiesc recursivitatea explicita cu cea implicita in unele situatii a dus poate la niste metode
+mai elegante de rezolvare, iar asta automat, m-a ajutat sa inteleg limbajul mult mai bine.

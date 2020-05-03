@@ -63,10 +63,12 @@ levelIndices level = indices $ cells $ level
 finishEndl :: [Char] -> [Char]
 finishEndl xs = foldr(\x acc -> x:acc) [endl] xs
 
+
 formatMatrix:: Level -> [Char]
 formatMatrix level = replaceMarks (markNewline $ levelIndices level) (cells level)
 
 
+--parcurge lista de indecsi si insereaza un marcator (-3,-3) pentru fiecare linie noua
 markNewline :: [(Int,Int)] -> [(Int,Int)]
 markNewline list = foldr (\x acc -> markNewlineAux x acc) [] list
 
@@ -76,6 +78,8 @@ markNewlineAux (a,b) acc
         | a == (fst $ head acc) = (a,b):acc
         | otherwise = (a,b):minus3:acc
 
+
+--parcurge lista mare de indecsi si pentru fiecare marcator (-3,-3), pune un endl
 replaceMarks:: [(Int,Int)] -> (A.Array (Int,Int) Cell) -> [Char]
 replaceMarks list ar = foldr (\x acc -> (replaceMarkAux x ar):acc) [] list
 
@@ -255,6 +259,9 @@ connection (Cell x) (Cell y) dir
         | x == startRight = checkStartRight (y,dir)
         | otherwise = False
       
+
+-- pentru a determina conexiunile, hardcodez lista de conexiuni valide pentru fiecare celula
+-- si aplic o cautare pe lista respectiva de fiecare data cand vreau sa validez o conexiune
 
 -- XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
@@ -486,7 +493,7 @@ wonLevel level= walkLevel start level
 
 
 
-
+--functie auxiliara folosita pentru a valida daca o celula are un emptySpace
 isValidEmptySpace :: OffsetTuple -> Level -> Bool
 isValidEmptySpace (pos,_) level
                       | c == emptySpace = True
@@ -573,10 +580,13 @@ oppositeDirection dir
              | otherwise = South
 
 
+--functie care primeste o actiune si ii calculeaza reversul
 oppositeAction:: Action -> Action
 oppositeAction (pos, dir) = ((nextPosition pos dir),opp)
                where opp = oppositeDirection dir
 
+--functie care primeste o stare actuala, o actiune care a dus in acea stare
+--si intoarce starea reverse 
 oppositeState:: Level -> Action -> Level
 oppositeState level action = executeAction op_action level
               where op_action = oppositeAction action 
