@@ -3,6 +3,7 @@
 
 module Search where
 
+import Data.List
 import ProblemState
 {-
     *** TODO ***
@@ -23,6 +24,8 @@ data Node s a = Node { state:: s
                       ,depth:: Int
                       ,children:: [Node s a] 
                      } deriving (Show)
+
+
 
 {-
     *** TODO ***
@@ -53,8 +56,6 @@ nodeChildren n = children n
     având drept copii nodurile succesorilor stării curente.
 -}
 
---fluxTest:: Int -> [Int]
---fluxTest i = i : [(fluxTest i),(fluxTest i)]
 
 createStateSpace :: (ProblemState s a, Eq s) => s -> Node s a
 createStateSpace initState = root
@@ -62,17 +63,19 @@ createStateSpace initState = root
                                        ,action = Nothing -- Maybe a
                                        ,parent = Nothing -- Maybe (Node s a)
                                        ,depth = 0        -- Int
-                                       ,children = childrenNodes root}
+                                       ,children = createChildren root}
 
 
 
 
 
-childrenNodes :: (ProblemState s a, Eq s) => Node s a -> [(Node s a)]
-childrenNodes parentNode = [child | (act,st) <- (successors (state parentNode)),
-              let child = Node {state = st ,action = Just act, parent = Just parentNode ,depth = (depth parentNode) + 1 ,children = childrenNodes child}]
-
---    successors :: s -> [(a, s)]
+createChildren :: (ProblemState s a, Eq s) => Node s a -> [(Node s a)]
+createChildren parentNode = [node | (act,st) <- (successors (state parentNode)),
+             let node = Node {state = st 
+                              ,action = Just act
+                              ,parent = Just parentNode 
+                              ,depth = (depth parentNode) + 1 
+                              ,children = createChildren node}]
 
 
 
@@ -90,6 +93,7 @@ bfs node = bfsAux [node] []
 
 -- queue -- visited 
 bfsAux:: Ord s => [Node s a] -> [s] -> [([Node s a], [Node s a])]
+bfsAux [] _ = []
 bfsAux (x:xs) visited 
           | (state x) `elem` visited = []
           | otherwise = (currChildren, concat [xs,currChildren]) : (bfsAux (concat [xs,currChildren]) ((state x):visited))
@@ -102,8 +106,40 @@ bfsAux (x:xs) visited
     intersecția dintre cele două frontiere.
 -}
 
+-- [([Node s a], [Node s a])]  [([Node s a], [Node s a])] 
+
+
+-- [(([Node s a] , [Node s a]) , ([Node s a], [Node s a]))]
+
 bidirBFS :: Ord s => Node s a -> Node s a -> (Node s a, Node s a)
-bidirBFS = undefined
+bidirBFS start fin= extractIntersection (head (dropWhile (\x -> ((bidirIntersection x) == False)) (zip (bfs start) (bfs fin))))
+
+
+--bidirBFSa :: (Ord s) => Node s a -> Node s a -> (([Node s a], [Node s a]),([Node s a], [Node s a]))
+--bidirBFSa start fin = head (dropWhile (\x -> ((bidirIntersection x) == False)) (zip (bfs start) (bfs fin)))
+
+bidirIntersection :: (Eq s) => (([Node s a] , [Node s a]) , ([Node s a], [Node s a])) -> Bool
+bidirIntersection ((firstCurr, firstTotal), (secCurr, secTotal))
+                     | (stateList firstCurr) `intersect` (stateList secTotal) /= [] = True
+                     | (stateList secCurr) `intersect` (stateList firstTotal) /= [] = True
+                     | otherwise = False
+
+stateList :: [Node s a] -> [s]
+stateList list = map (\x -> state x) list
+
+extractIntersection :: (Eq s) => (([Node s a], [Node s a]),([Node s a], [Node s a])) -> (Node s a, Node s a)
+extractIntersection ((firstCurr, firstTotal), (secCurr, secTotal))
+            | (stateList firstCurr) `intersect` (stateList secTotal) /= [] = extractFirstOcc firstCurr secTotal
+            | (stateList firstTotal) `intersect` (stateList secCurr) /= [] = extractFirstOcc firstTotal secCurr
+            | otherwise = ((head firstCurr), (head secTotal))
+
+cartProduct :: [Node s a] -> [Node s a] -> [(Node s a, Node s a)]
+cartProduct first sec = [(x,y) | x <- first, y <- sec]
+
+extractFirstOcc :: (Eq s) => [Node s a] -> [Node s a] -> (Node s a, Node s a)
+extractFirstOcc first sec = head (dropWhile (\(x,y)-> ((state x) /= (state y))) (cartProduct first sec) )
+
+
 
 
 {-
@@ -118,8 +154,25 @@ bidirBFS = undefined
 -}
 
 extractPath :: Node s a -> [(Maybe a, s)]
-extractPath = undefined
+extractPath n = reverse (reverseExtract (takeWhile (\x -> filterMaybe x) (reverseNodeList (Just n))))
 
+reverseExtract:: [Maybe (Node s a)] -> [(Maybe a, s)]
+reverseExtract list = map (\(Just x) -> (action x, state x)) (filter (\y -> filterMaybe y) list)
+
+filterMaybe:: Maybe (Node s a) -> Bool
+filterMaybe Nothing  = False
+filterMaybe _ = True
+
+reverseNodeList :: Maybe (Node s a) -> [Maybe (Node s a)]
+reverseNodeList n = iterate reverseNode n
+
+reverseNode :: Maybe (Node s a) -> Maybe (Node s a)
+reverseNode Nothing = Nothing
+reverseNode (Just a) = nodeParent a
+
+--applyReverseAction :: (ProblemState s a) => (Maybe a, s) -> (Maybe a, s)
+--applyReverseAction (Nothing, s) = (Nothing, s)
+--applyReverseAction (Just a, s) 
 
 
 {-
